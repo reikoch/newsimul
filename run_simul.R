@@ -19,7 +19,7 @@ run_simul <- function(H0) {
             group_by(patnum) %>%
             mutate(hasICE = any(!trt_stop_visit %in% c(levels_visit[J], "Inf"))) %>%
             filter(hasICE) %>%
-            select(-hasICE)
+            dplyr::select(-hasICE)
 
         data_ice <- data_hasICE %>%
             group_by(patnum) %>%
@@ -33,7 +33,7 @@ run_simul <- function(H0) {
 
         res_imp <- impute(
             draws = draws_obj,
-            data_ice = data_ice,
+            update_ice = data_ice,
             references = references
         )
 
