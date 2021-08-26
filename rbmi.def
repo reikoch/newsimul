@@ -1,0 +1,49 @@
+Bootstrap: docker
+From: rocker/r-ver:4.0.2
+
+%files
+    rbmi_0.0.1.tar.gz /tmp
+
+%post 
+    apt-get update -qq
+    apt-get -y --no-install-recommends install \
+    libxml2-dev \
+    libcairo2-dev \
+    libgit2-dev \
+    default-libmysqlclient-dev \
+    libpq-dev \
+    libsasl2-dev \
+    libsqlite3-dev \
+    libssh2-1-dev \
+    libxtst6 \
+    libcurl4-openssl-dev \
+    unixodbc-dev \
+    libv8-dev \
+    libxt6
+    rm -rf /var/lib/apt/lists/*
+#    install2.r --error Matrix
+
+    install2.r --error --skipinstalled \
+    dplyr \
+    covr \
+    tidyr \
+    nlme \
+    testthat \
+    emmeans \
+    mvtnorm \
+    RcppParallel \
+    Rcpp \
+    rstan \
+    rstantools \
+    RcppEigen \
+    StanHeaders \
+    BH \
+    glmmTMB 
+    install2.r --error --skipinstalled /tmp/rbmi_0.0.1.tar.gz && \
+    rm -rf /tmp/downloaded_packages/tmp/rbmi_0.0.1.tar.gz && \
+    apt-get clean
+
+%runscript
+    cd /
+    R
+
