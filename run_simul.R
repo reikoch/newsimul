@@ -2,11 +2,17 @@ if(isFALSE(file.exists("Results"))) {
     dir.create("Results")
 }
 
+if(isFALSE(file.exists("Results/Res_each_sim"))) {
+    dir.create("Results/Res_each_sim")
+}
+
+library(rbmi)
+library(MASS)
+library(dplyr)
+library(tidyverse)
+
 run_simul <- function(H0) {
 
-    library(rbmi)
-    library(MASS)
-    library(dplyr)
     source("simul_functions.R")
 
     # TODO: double check whether patients in the control arm are imputed under MAR or ref-based
@@ -23,7 +29,7 @@ run_simul <- function(H0) {
 
         data_ice <- data_hasICE %>%
             group_by(patnum) %>%
-            summarise("method" = ifelse(group[1] == "Intervention", imp_drug, imp_placebo),
+            summarise("strategy" = ifelse(group[1] == "Intervention", imp_drug, imp_placebo),
                       "visit" = levels_visit[which(trt_stop_visit[1] == levels_visit) + 1])
 
         return(data_ice)
@@ -33,7 +39,7 @@ run_simul <- function(H0) {
 
         res_imp <- impute(
             draws = draws_obj,
-            update_ice = data_ice,
+            update_strategy = data_ice,
             references = references
         )
 
@@ -42,10 +48,10 @@ run_simul <- function(H0) {
             imputations = res_imp,
             fun = ancova,
             vars = vars,
-            visit_level = visit_analysis
+            visits = visit_analysis
         )
 
-        if(class(draws_obj) == "condmean") {
+        if(class(draws_obj$method) == "condmean") {
             res <- pool(
                 analyze_res,
                 alternative = "two.sided",
@@ -84,13 +90,14 @@ run_simul <- function(H0) {
     data[,c("y_noICE", "y_noDropout", "y")] <- data[,c("y_noICE", "y_noDropout", "y")] - data$y_bl
     data <- as.data.frame(data)
 
-    vars <- list(
+    vars <- ivars(
         outcome = "y",
         subjid = "patnum",
         visit = "visit",
         group = "group",
         covariates = c("y_bl*visit", "group*visit"),
-        method = "method"
+        strata = "group",
+        strategy = "strategy"
     )
 
     covariance <- "us"
@@ -211,8 +218,11 @@ run_simul <- function(H0) {
 
     ############################# BAYESIAN MULTIPLE IMPUTATION
 
+    print("Running Bayesian multiple imputation")
+
     method <- method_bayes(
-        n_samples = n_imputations_bayes
+        n_samples = n_imputations_bayes,
+        verbose = FALSE
     )
 
     draws_obj_bayesian <- draws(
@@ -286,13 +296,15 @@ run_simul <- function(H0) {
     return(results)
 }
 # estimated time of one full simulation: 31 minutes
+runsim <- function(i, H0) {
+    xx <- run_simul(H0)
+    saveRDS(c(i=i, H0=H0, xx), file = file.path('Results/Res_each_sim', paste('res', i, H0, '.rds', sep = '_')))
+}
 
-# EXAMPLE (DON'T RUN)
-# N <- 1000
-# H0 <- c(TRUE, FALSE)
-# res_simul_H0true <- replicate(N, run_simul(H0[[1]]), simplify = FALSE)
-# res_simul_H0false <- replicate(N, run_simul(H0[[2]]), simplify = FALSE)
-#
-# saveRDS(res_simul_H0true, file = "Results/res_simul_H0true.rds")
-# saveRDS(res_simul_H0false, file = "Results/res_simul_H0false.rds")
 
+N <- 10000
+
+parallel::mclapply(seq.int(N), runsim, H0=TRUE, mc.cores = parallel::detectCores())
+
+li <- list.files('Results/Res_each_sim', pattern = '.*\\.rds$', full.names = TRUE)
+saveRDS(lapply(li, function(X) readRDS(X)), file = "Results/results.rds")

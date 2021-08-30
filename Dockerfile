@@ -17,7 +17,7 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
   rm -rf /var/lib/apt/lists/* && \
     install2.r --error Matrix
 
-COPY rbmi_0.0.1.tar.gz /tmp
+COPY rbmi_0.0.2.tar.gz /tmp
 
 RUN install2.r --error --skipinstalled \
     dplyr \
@@ -34,10 +34,12 @@ RUN install2.r --error --skipinstalled \
     RcppEigen \
     StanHeaders \
     BH \
-    glmmTMB 
-RUN install2.r --error --skipinstalled /tmp/rbmi_0.0.1.tar.gz && \
-  rm -rf /tmp/downloaded_packages && \
+    glmmTMB \
+    RhpcBLASctl
+RUN install2.r --error --skipinstalled /tmp/rbmi_0.0.2.tar.gz && \
+  rm -rf /tmp/downloaded_packages /tmp/rbmi_0.0.2.tar.gz && \
   apt-get clean
+
 
 WORKDIR /
 USER 1000
