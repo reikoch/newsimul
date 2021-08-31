@@ -1,9 +1,18 @@
 # generate data
-N <- 10
+N <- 10000
 
+library(dplyr)
 source('simul_functions.R')
 
-xx <- replicate(N, simul_data(), simplify = FALSE)
-datadirs <- file.path('in', seq.int(0,N-1))
-deleteme <- sapply(datadirs, dir.create, recursive = TRUE)
-deleteme <- mapply(saveRDS, xx, file.path(datadirs, 'data.rds'))
+datadirs <- 'in'
+
+dir.create(datadirs, showWarnings=FALSE)
+xx <- replicate(N, simul_data(H0=TRUE), simplify = FALSE)
+for (i in seq.int(N)) {
+  saveRDS(xx[[i]], paste0(datadirs,'/data_true_', i, '.rds'))
+}
+rm(xx)
+xx <- replicate(N, simul_data(H0=FALSE), simplify = FALSE)
+for (i in seq.int(N)) {
+	saveRDS(xx[[i]], paste0(datadirs,'/data_false_', i, '.rds'))
+}

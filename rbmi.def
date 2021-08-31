@@ -2,7 +2,7 @@ Bootstrap: docker
 From: rocker/r-ver:4.0.2
 
 %files
-    rbmi_0.0.1.tar.gz /tmp
+    rbmi_0.0.2.tar.gz /tmp
 
 %post 
     apt-get update -qq
@@ -39,8 +39,9 @@ From: rocker/r-ver:4.0.2
     StanHeaders \
     BH \
     glmmTMB 
-    install2.r --error --skipinstalled /tmp/rbmi_0.0.1.tar.gz && \
-    rm -rf /tmp/downloaded_packages/tmp/rbmi_0.0.1.tar.gz && \
+
+    install2.r --error --skipinstalled /tmp/rbmi_0.0.2.tar.gz && \
+    rm -rf /tmp/downloaded_packages/tmp/rbmi_0.0.2.tar.gz && \
     apt-get clean
 
 %runscript

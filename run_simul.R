@@ -1,19 +1,8 @@
-if(isFALSE(file.exists("Results"))) {
-    dir.create("Results")
-}
-
-if(isFALSE(file.exists("Results/Res_each_sim"))) {
-    dir.create("Results/Res_each_sim")
-}
-
 library(rbmi)
 library(MASS)
 library(dplyr)
-library(tidyverse)
 
-run_simul <- function(H0) {
-
-    source("simul_functions.R")
+run_simul <- function(data) {
 
     # TODO: double check whether patients in the control arm are imputed under MAR or ref-based
     create_data_ice <- function(data, imp_drug, imp_placebo) {
@@ -67,8 +56,6 @@ run_simul <- function(H0) {
         return(res)
     }
 
-    # simulate data: 100 subjects per arm, assume a non-zero treatment effect
-    data <- simul_data(n = 100, H0 = H0)
 
     factor_vars <- c("patnum", "group", "visit", "time", "trt_stop_visit", "dropout_visit", "time_off_trt")
     numeric_vars <- c("y_bl", "y_noICE", "y_noDropout", "y")
@@ -295,16 +282,15 @@ run_simul <- function(H0) {
 
     return(results)
 }
-# estimated time of one full simulation: 31 minutes
-runsim <- function(i, H0) {
-    xx <- run_simul(H0)
-    saveRDS(c(i=i, H0=H0, xx), file = file.path('Results/Res_each_sim', paste('res', i, H0, '.rds', sep = '_')))
-}
 
+# handle in and out
+i <- Sys.getenv('LSB_JOBINDEX')
+j <- Sys.getenv('LSB_JOBID')
+dir.create('out', showWarnings=FALSE)
 
-N <- 10000
+res <- run_simul(readRDS(paste0('in/data_true_', i, '.rds')))
+saveRDS(res, paste('out/out_true', j, i, '.rds', sep='_'))
+rm(res)
+res <- run_simul(readRDS(paste0('in/data_false_', i, '.rds')))
+saveRDS(res, paste('out/out_false', j, i, '.rds', sep='_'))
 
-parallel::mclapply(seq.int(N), runsim, H0=TRUE, mc.cores = parallel::detectCores())
-
-li <- list.files('Results/Res_each_sim', pattern = '.*\\.rds$', full.names = TRUE)
-saveRDS(lapply(li, function(X) readRDS(X)), file = "Results/results.rds")
