@@ -2,7 +2,7 @@ Bootstrap: docker
 From: rocker/r-ver:4.0.2
 
 %files
-    rbmi_0.0.2.tar.gz /tmp
+    rbmi_0.0.2.tar.gz /
 
 %post 
     apt-get update -qq
@@ -21,7 +21,6 @@ From: rocker/r-ver:4.0.2
     libv8-dev \
     libxt6
     rm -rf /var/lib/apt/lists/*
-#    install2.r --error Matrix
 
     install2.r --error --skipinstalled \
     dplyr \
@@ -40,8 +39,8 @@ From: rocker/r-ver:4.0.2
     BH \
     glmmTMB 
 
-    install2.r --error --skipinstalled /tmp/rbmi_0.0.2.tar.gz && \
-    rm -rf /tmp/downloaded_packages/tmp/rbmi_0.0.2.tar.gz && \
+    install2.r --error --skipinstalled /rbmi_0.0.2.tar.gz && \
+    rm -rf /tmp/downloaded_packages /rbmi_0.0.2.tar.gz && \
     apt-get clean
 
 %runscript
